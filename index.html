@@ -5,16 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title></title>
+    <style>
+     #map {
+        width: 100%;
+        height: 100%;
+        border: 1px solid black;
+        margin: 0;
+        padding: 0;
+        background-color:#ccc;
+        overflow:hidden;
+    }
+    </style>
 </head>
 <body>
-        <div id="map" style="height:500px;width:500px"></div><!--todo id=Map  -->
-        <script src="data.js" async ></script>
+        <div id="map" style="position:absolute;top:0;left:0;height:100%;width:100%"></div><!--todo id=Map  -->
+        <script src="data.js"></script>
         <script src="json.js"></script>
+        <!-- <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"> -->
+        </script>
         <script src="map.js"></script>
-<!-- todo по координате найти ближашую точку оплаты! -->
-        <script>setTimeout(function(){
-            document.getElementsByClassName('ymaps-2-1-68-searchbox-input__input')[0].value = 
-            'пл победы';
-        },3000);</script>
+        <!-- <div  style="position:absolute;width:100%;height:100%;background-color:red;">
+                <div id="map"></div>
+        </div> -->
+
+        <!-- todo по координате найти ближашую точку оплаты! -->
+
 </body>
 </html>

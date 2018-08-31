@@ -1,118 +1,207 @@
-(function(){
-    //ymaps.ready(init); //!!!! 2 maps will be created
-    var myMap;
+// const promise = doSomething();
+// const promise2 = promise.then(successCallback, failureCallback);
+//todo пострить маршрут от объекта к терминалу
+//https://tech.yandex.ru/maps/jsbox/2.1/geolocated_multiroute
 
-    function init() {
-        //SuggestView options.boundedBy parameters.options.boundedBy
-        myMap = new ymaps.Map('map', {
-            // center: [48.015877, 37.802850],
-            center: [48, 38],
-            zoom: 8,
-            controls: ['zoomControl']
-        }, {
-            searchControlProvider: 'yandex#map'
+//todo убрать таймеры и делать все по событиям
+//где то возможно неправильно прописываются координаты
+
+//оr another way, drawing?
+//+добавить кнопку моя позиция
+//todo в файле html не должно быть json.js
+//todo на всю страницу http://jsfiddle.net/KW3U7/
+
+// https://tech.yandex.ru/maps/jsbox/2.1/geolocated_multiroute
+// https://tech.yandex.ru/maps/jsbox/2.1/multiroute_pedestrian
+
+
+
+var initVal = 'розы люксембург 109',
+    initScale = 16; //пл победы 35а    таманский    пл ленина
+var myMap;
+var myCollection;
+var searchControl;
+var _event;
+var gps;
+var newPos = false;
+var loading = 1;
+var searchIndex = 0;
+var newLocation = true;
+var multiRoute;
+function draw(event) {//return;
+    console.log('DrawBaloon '+newLocation+loading);
+    if(newLocation && (
+      searchIndex==0 && loading==4||
+       searchIndex==1 && loading==1
+     ) ){//if newLocation
+console.log('DrawPath ');
+        searchIndex=0;
+        newLocation = false;
+
+        //searchControl.showResult(0);//balloon?
+
+        //myCollection.getClosestTo(myMap.getCenter()).balloon.open();
+        var point = myCollection.getClosestTo(myMap.getCenter());
+        track.call(myMap,myMap.getCenter(),point);
+        // myMap.getCenter().balloon.open();
+        point.balloon.open();
+        console.log(Date());
+  }
+}
+
+function init() {
+
+    var geolocation = ymaps.geolocation;
+    searchControl = new ymaps.control.SearchControl({
+        options: { //parameters.options.boundedBy  parameters.options.strictBounds https://tech.yandex.ru/maps/doc/jsapi/2.1/ref/reference/control.SearchControl-docpage/
+            noSuggestPanel: true,
+            float: 'right',
+            floatIndex: 100,
+            noPlacemark: true, //запретить балун тру , но он все равно есть
+            noSelect: false, //*
+
+            noPopup: true, //пропадает список но и не показывает ближайшую точку
+            noBalloon:true,
+            noCentering: false, //*
+            //.zoomMargin   noCentring=false
+            strictBounds: new ymaps.Rectangle([ //yandex#search'
+                // Setting the coordinates of the diagonal corners of the rectangle.
+                [47.5, 37.3], //[47, 37]                 48 37.8
+                [48.5, 38.2] //[49, 38]
+                ///**/ typeof id_153425669178416074304 === 'function' && id_153425669178416074304({"status":"success","data":{"type":"FeatureCollection","properties":{"ResponseMetaData":{"SearchRequest":{"request":"пл победы","results":10,"skip":0,"boundedBy":[[37.04842675,55.43644829],[38.17590226,56.04690124]]},"SearchResponse":{"found":0,"SourceMetaDataList":{"SourceMetaData":{"GeocoderResponseMetaData":{"request":"пл победы","found":0,"results":10,"InternalResponseInfo":{"accuracy":0,"mode":"geocode","version":"18.08.14-1"}}},"GeocoderResponseMetaData":{"request":"пл победы","found":0,"results":10,"InternalResponseInfo":{"accuracy":0,"mode":"geocode","version":"18.08.14-1"}}},"InternalResponseInfo":{"display":"single","context":"ZAAAAAgAEAAaKAoSCQAAAAAAkHZAEQAAAAAAoGZAEhIJAAAAAAAA8L8RAAAAAAAA8L8iAQAoyAEwATiR+7mNnYK28zpA/v//////////AUgBVQAAgL9Y////////////AWoCcnVwAJ0B7FG4PaABAKgBAA==","reqid":"1534256696075567-988330053-vla1-4012","serpid":"1534256696075567-988330053-vla1-4012"},"display":"single","context":"ZAAAAAgAEAAaKAoSCQAAAAAAkHZAEQAAAAAAoGZAEhIJAAAAAAAA8L8RAAAAAAAA8L8iAQAoyAEwATiR+7mNnYK28zpA/v//////////AUgBVQAAgL9Y////////////AWoCcnVwAJ0B7FG4PaABAKgBAA=="}}},"features":[]}});
+            ]),
+        }
+    });
+    myMap = new ymaps.Map('map', {
+        center: [48, 37.8],
+        zoom: initScale,
+        controls: ['zoomControl']
+    }, {
+        searchControlProvider: 'yandex#search' //search or map ???
+    }); //yandex#search
+
+    myMap.events.add('actionend', function () {
+      console.log('myMap.actionend1 ');
+      loading++;draw();
+    });
+
+    // searchControl.events.add('load', function (event) {
+    //     console.log('searchControl.load2');
+    //     loading++;console.log(loading);
+    //     // Проверяем, что это событие не "дозагрузки" результатов и
+    //     // по запросу найден хотя бы один результат.
+    //     if (!event.get('skip') && searchControl.getResultsCount()) {
+    //       console.log('::showResult');
+    //         searchControl.showResult(0);
+    //     }
+    //     //end?s
+    // });
+
+    // searchControl.events.add('optionschange',function(){searchIndex++;});//2 times on search
+    searchControl.events.add('submit',function(){
+      console.log('SUBMIT');
+      newLocation = true;
+      searchIndex=1;
+      loading=0;
+    });//2 times on search
+    // searchControl.events.add('resultshow',function(){alert('1');}); //fire evry time when i see point
+
+    searchControl.events.add('resultshow', function (event) {
+        console.log('resultshow3');
+        loading++;
+        draw(event);
+
+    }, this);
+
+
+    searchControl.events.add('load', function (event) {
+            //loading++;
+            // // Проверяем, что это событие не "дозагрузки" результатов и
+            // // по запросу найден хотя бы один результат.
+            // if (!event.get('skip') && searchControl.getResultsCount()) {
+            //     searchControl.showResult(0);
+            //     console.dir(searchControl);
+            // }
         });
 
-        
-        console.dir(myMap);
+    // Сравним положение, вычисленное по ip пользователя и
+    // положение, вычисленное средствами браузера.
+    //
+    // geolocation.get({
+    //     provider: 'browser',
+    //     mapStateAutoApply: true
+    // }).then(function (result) {
+    //     // Зеленым цветом пометим положение, полученное через браузер.
+    //     // Если браузер не поддерживает эту функциональность, метка не будет добавлена на карту.
+    //     result.geoObjects.options.set('preset', 'islands#greenCircleIcon');
+    //     result.geoObjects.get(0).properties.set({   balloonContentBody: 'Мое местоположение' });
+    //     myMap.geoObjects.add(result.geoObjects);
+    //     console.log('loco browser');
+    // });
+    geolocation.get({
+        provider: 'yandex',
+        mapStateAutoApply: true
+    }).then(function (result) {
+        // Красным цветом пометим положение, вычисленное через ip.
+        result.geoObjects.options.set('preset', 'islands#redCircleIcon');
+        result.geoObjects.get(0).properties.set({   balloonContentBody: 'Мое местоположение' });
 
-        var searchControl = new ymaps.control.SearchControl({
-            options: {//https://tech.yandex.ru/maps/doc/jsapi/2.1/ref/reference/control.SearchControl-docpage/
-                // Заменяем стандартный провайдер данных (геокодер) нашим собственным.
-                noCentering: false,
-                noSuggestPanel: false,
-                //noSelect: true,
-                noPlacemark: true,
-                resultsPerPage: 10,
-                
-                // fitMaxWidth:true,
-                strictBounds:new ymaps.Rectangle([
-                    // Setting the coordinates of the diagonal corners of the rectangle.
-                    [47.8, 37.5],
-                    [48.4, 38]
-                    ///**/ typeof id_153425669178416074304 === 'function' && id_153425669178416074304({"status":"success","data":{"type":"FeatureCollection","properties":{"ResponseMetaData":{"SearchRequest":{"request":"пл победы","results":10,"skip":0,"boundedBy":[[37.04842675,55.43644829],[38.17590226,56.04690124]]},"SearchResponse":{"found":0,"SourceMetaDataList":{"SourceMetaData":{"GeocoderResponseMetaData":{"request":"пл победы","found":0,"results":10,"InternalResponseInfo":{"accuracy":0,"mode":"geocode","version":"18.08.14-1"}}},"GeocoderResponseMetaData":{"request":"пл победы","found":0,"results":10,"InternalResponseInfo":{"accuracy":0,"mode":"geocode","version":"18.08.14-1"}}},"InternalResponseInfo":{"display":"single","context":"ZAAAAAgAEAAaKAoSCQAAAAAAkHZAEQAAAAAAoGZAEhIJAAAAAAAA8L8RAAAAAAAA8L8iAQAoyAEwATiR+7mNnYK28zpA/v//////////AUgBVQAAgL9Y////////////AWoCcnVwAJ0B7FG4PaABAKgBAA==","reqid":"1534256696075567-988330053-vla1-4012","serpid":"1534256696075567-988330053-vla1-4012"},"display":"single","context":"ZAAAAAgAEAAaKAoSCQAAAAAAkHZAEQAAAAAAoGZAEhIJAAAAAAAA8L8RAAAAAAAA8L8iAQAoyAEwATiR+7mNnYK28zpA/v//////////AUgBVQAAgL9Y////////////AWoCcnVwAJ0B7FG4PaABAKgBAA=="}}},"features":[]}});
-                ])
-                //https://yandex.ru/blog/mapsapi/strictbounds-v-searchcontrol-ne-rabotaet
-                // noPopup:true,
-                // noSelect:true
-                //https://api-maps.yandex.ru/services/search/v1/?callback=id_149733611298987634388&format=json&lang=ru_RU&token=undefined&rspn=1&results=20&origin=jsapi2SearchControl&snippets=businessrating%2F2.x%2Cmasstransit%2F1.x&ask_direct=1&text=%D0%A8%D0%BE%D0%BA%D0%BE%D0%BB%D0%B0%D0%B4%D0%BD%D0%B8%D1%86%D0%B0&ll=37.597295804584526%2C55.7636625431712&spn=0.0046402215957854764%2C0.0013942952844061551&sign=3512325313
-            }
+        myMap.geoObjects.add(result.geoObjects); //фокус на меня мое местоположение моя позиция
+console.log('loco yandex');
+
+    }).then(function () {
+        // console.log('zoom');
+        // setTimeout(function () {
+        //newPos=true;
+            myMap.setZoom(15);
+        // }, 400);
+    });
+
+    geolocation.get({
+        provider: 'browser',
+        mapStateAutoApply: true
+    }).then(function (result) {
+        // console.log('zoom2');
+        // Зеленым цветом пометим положение, полученное через браузер.
+        // Если браузер не поддерживает эту функциональность, метка не будет добавлена на карту.
+        result.geoObjects.options.set('preset', 'islands#greenCircleIcon');
+        myMap.geoObjects.add(result.geoObjects);
+        //console.dir(result.geoObjects);
+        gps = result.geoObjects.position;
+        //console.log(gps);
+        newPos = true;
+
+    });
+
+    myCollection = ymaps.geoQuery(getData());
+    myMap.geoObjects.add(myCollection.clusterize());
+
+    myMap.controls.add(searchControl);
+    searchControl.state.set('inputValue', initVal)
+}
+
+
+
+function show(event) {//настройка масштаба тут
+    if (!event.get('skip') && searchControl.getResultsCount()) {
+        searchControl.showResult(0);
+    }
+}
+
+function track(a,b) {
+    // Задаём точки мультимаршрута.
+    console.log("Track "+a);
+    var pointA = a,pointB = b,
+        multiRoute = new ymaps.multiRouter.MultiRoute({
+            referencePoints: [ pointA,pointB ],
+            params: { routingMode: 'pedestrian'}//Тип маршрутизации - пешеходная маршрутизация.
+        }, {// Автоматически устанавливать границы карты так, чтобы маршрут был виден целиком.
+            boundsAutoApply: true
         });
-        
-        // searchControl.SearchControl(parameters.options.fitMaxWidth,true);
-        // searchControl.SearchControl(parameters.options.boundedBy,);
 
-//todo https://tech.yandex.ru/maps/doc/archive/jsapi/2.0/ref/reference/geolocation-docpage/
-        
-        // searchControl.events.add('clear', function (e) {alert('clear');console.log(e);});
-        // searchControl.events.add('error', function (e) {alert('error');console.log(e);});
-        // searchControl.events.add('load', function (e) {
-        //     var t = "Украина, Донецк, "+ searchControl._yandexState._model.request;
-        //     e.originalEvent.request = t;
-        //     searchControl._yandexState._model.request = t;
-        //     alert('load');console.log(e);
-        //     console.dir(searchControl);
-        // });
-        // searchControl.events.add('optionschange', function (e) {//too late
-            // var t = "Украина, Донецк, "+ e.originalEvent.target.state._data.inputValue;
-            // console.log('optionschange');
-            // console.log(e);
-            // console.dir(searchControl); console.dir(e);
-            // e.originalEvent.target.state._data.inputValue = t;
-            // e.originalEvent.target.state._data.originalRequest = t;
-            // e.originalEvent.target.state._data.request = t;
-            // console.dir(e);//.target.state._data.inputValue
-        // });
-        
-        //searchControl.events.add('parentchange', function (e) {console.log('parentchange');console.log(e);});
-        
-        // searchControl.events.add('resultselect', function (e) {console.log('resultselect');console.log(e);});
-        // searchControl.events.add('resultshow', function (e) {console.log('resultshow');console.log(e);});
-        
-        // searchControl.events.add('submit', function (e) {console.log('submit');console.log(e);
-        //     var t = "Украина, Донецк, "+ e.originalEvent.request;
-        //     e.originalEvent.request = t;
-        //     searchControl._yandexState._model.request = t;
+    // Добавляем мультимаршрут на карту.
+    this.geoObjects.add(multiRoute);
+}
 
-        //     console.dir(searchControl); console.dir(e);
-        // });
 
-        // searchControl.events.add('optionschange', function (e) {
-        //     // e.originalEvent.request = "Украина, Донецк, "+ e.originalEvent.request;
-        //     console.dir(e);
-        // });
-        // searchControl.events.add('load', function (event) {
-        //     // Проверяем, что это событие не "дозагрузки" результатов и
-        //     // по запросу найден хотя бы один результат.
-            
-        //     if (!event.get('skip') && searchControl.getResultsCount()) {
-        //         searchControl.showResult(0);
-        //     }
-        // });
-        myMap.controls.add(searchControl, { //todo remove?
-            right: 10,
-            top: 10
-        });
-        // Создаем коллекцию.
-        var myCollection = ymaps.geoQuery(getData());
-        myMap.geoObjects.add(myCollection.clusterize());
-        
-        // searchControl.events.add('mapchange', function (event) { console.log('mapchange'); });
-
-        searchControl.events.add('resultshow', function (event) {
-            // console.log('resultshow');
-            // console.dir(myMap);
-            // console.dir(arguments);
-            var myId = event.get('index');
-            if (searchControl.getResultsCount()) {
-                var geoObjectsArray = searchControl.getResultsArray();
-                if (geoObjectsArray.length) {
-                    var myPoint = myCollection.getClosestTo(geoObjectsArray[myId], 500);
-                    myPoint.balloon.open();
-                }
-            }
-        }, this);
-    } //init
-
-    ymaps.ready(init);
-})();
+ymaps.ready(init);
