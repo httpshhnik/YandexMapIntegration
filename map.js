@@ -16,7 +16,7 @@
 
 
 
-var initVal = 'розы люксембург 109',
+var initVal = '',
     initScale = 16; //пл победы 35а    таманский    пл ленина
 var myMap;
 var myCollection;
@@ -26,17 +26,16 @@ var gps;
 var newPos = false;
 var loading = 1;
 var searchIndex = 0;
-var newLocation = true;
+
 var multiRoute;
 function draw(event) {//return;
-    console.log('DrawBaloon '+newLocation+loading);
-    if(newLocation && (
+    console.log('DrawBaloon '+loading);
+    if(
       searchIndex==0 && loading==4||
        searchIndex==1 && loading==1
-     ) ){//if newLocation
+     ){//if newLocation
 console.log('DrawPath ');
         searchIndex=0;
-        newLocation = false;
 
         //searchControl.showResult(0);//balloon?
 
@@ -82,62 +81,19 @@ function init() {
 
     myMap.events.add('actionend', function () {
       console.log('myMap.actionend1 ');
-      loading++;draw();
+      loading++;
+      draw();
     });
 
-    // searchControl.events.add('load', function (event) {
-    //     console.log('searchControl.load2');
-    //     loading++;console.log(loading);
-    //     // Проверяем, что это событие не "дозагрузки" результатов и
-    //     // по запросу найден хотя бы один результат.
-    //     if (!event.get('skip') && searchControl.getResultsCount()) {
-    //       console.log('::showResult');
-    //         searchControl.showResult(0);
-    //     }
-    //     //end?s
-    // });
-
-    // searchControl.events.add('optionschange',function(){searchIndex++;});//2 times on search
     searchControl.events.add('submit',function(){
       console.log('SUBMIT');
-      newLocation = true;
+
       searchIndex=1;
       loading=0;
     });//2 times on search
-    // searchControl.events.add('resultshow',function(){alert('1');}); //fire evry time when i see point
-
-    searchControl.events.add('resultshow', function (event) {
-        console.log('resultshow3');
-        loading++;
-        draw(event);
-
-    }, this);
 
 
-    searchControl.events.add('load', function (event) {
-            //loading++;
-            // // Проверяем, что это событие не "дозагрузки" результатов и
-            // // по запросу найден хотя бы один результат.
-            // if (!event.get('skip') && searchControl.getResultsCount()) {
-            //     searchControl.showResult(0);
-            //     console.dir(searchControl);
-            // }
-        });
 
-    // Сравним положение, вычисленное по ip пользователя и
-    // положение, вычисленное средствами браузера.
-    //
-    // geolocation.get({
-    //     provider: 'browser',
-    //     mapStateAutoApply: true
-    // }).then(function (result) {
-    //     // Зеленым цветом пометим положение, полученное через браузер.
-    //     // Если браузер не поддерживает эту функциональность, метка не будет добавлена на карту.
-    //     result.geoObjects.options.set('preset', 'islands#greenCircleIcon');
-    //     result.geoObjects.get(0).properties.set({   balloonContentBody: 'Мое местоположение' });
-    //     myMap.geoObjects.add(result.geoObjects);
-    //     console.log('loco browser');
-    // });
     geolocation.get({
         provider: 'yandex',
         mapStateAutoApply: true
