@@ -1,3 +1,4 @@
+var debug = false;
 // const promise = doSomething();
 // const promise2 = promise.then(successCallback, failureCallback);
 //todo пострить маршрут от объекта к терминалу
@@ -13,8 +14,9 @@
 
 // https://tech.yandex.ru/maps/jsbox/2.1/geolocated_multiroute
 // https://tech.yandex.ru/maps/jsbox/2.1/multiroute_pedestrian
-
-
+/////////////////step 2 wifi zones
+//http://www.matrixhome.net/scripts/get_cords.php     wifi  var jsonObj
+//todo сделать прозрачные цвета,    внешние зоны, точки источника с картинкой
 
 var initVal = '',
     initScale = 16; //пл победы 35а    таманский    пл ленина
@@ -26,16 +28,18 @@ var gps;
 var newPos = false;
 var loading = 1;
 var searchIndex = 0;
-
 var multiRoute;
-function draw(event) {//return;
+function draw(event) {
+    
+    if(debug)return;
+    
     console.log('DrawBaloon '+loading);
     if(
       searchIndex==0 && loading==4||
        searchIndex==1 && loading==1
      ){//if newLocation
 console.log('DrawPath ');
-        searchIndex=0;
+        searchIndex=-1;
 
         //searchControl.showResult(0);//balloon?
 
@@ -80,7 +84,7 @@ function init() {
     }); //yandex#search
 
     myMap.events.add('actionend', function () {
-      console.log('myMap.actionend1 ');
+      //console.log('myMap.actionend1 ');
       loading++;
       draw();
     });
@@ -103,7 +107,7 @@ function init() {
         result.geoObjects.get(0).properties.set({   balloonContentBody: 'Мое местоположение' });
 
         myMap.geoObjects.add(result.geoObjects); //фокус на меня мое местоположение моя позиция
-console.log('loco yandex');
+//console.log('loco yandex');
 
     }).then(function () {
         // console.log('zoom');
@@ -130,10 +134,15 @@ console.log('loco yandex');
     });
 
     myCollection = ymaps.geoQuery(getData());
+    if(!debug)
     myMap.geoObjects.add(myCollection.clusterize());
 
+    if(!debug)
     myMap.controls.add(searchControl);
     searchControl.state.set('inputValue', initVal)
+
+    if(debug)
+     exec();
 }
 
 
@@ -157,7 +166,119 @@ function track(a,b) {
 
     // Добавляем мультимаршрут на карту.
     this.geoObjects.add(multiRoute);
+    
 }
 
 
 ymaps.ready(init);
+
+var lastValid;
+function reverse(p){
+    var _p = [];
+    
+    _p[0] = p[1];
+    _p[1] = p[0];
+    //console.log(p);
+    if(_p[0]<10 || _p[1]<10
+    //||_p[0]==48 || _p[1]==48//TODO fix WTF far point wifi.mess[33].zone
+    )return lastValid;  //TODO fix crutch, data error  wifi.mess[14].zone last element = 4   , huge lines to nowhere
+    lastValid = _p;
+    return _p;
+}
+function poly(arr,mes,style,mark) {
+    //var arr = [[37.79080661274975,47.99166034834581],[37.7910855624873,47.99167470864984],[37.79119821526592,47.99179677107283],[37.791117748995475,47.99203371495209],[37.7908334348399,47.9924142589056],[37.79074223973339,47.99262247988098],[37.79078515507763,47.99273736005947],[37.79072078206127,47.9927804400605],[37.79068323113506,47.992801980047496],[37.79054912068432,47.99276967006361],[37.79032381512707,47.99276608006414],[37.79019506909435,47.992801980047496],[37.790093145151786,47.992873779939266],[37.78998049237316,47.992884549914415],[37.78974982239788,47.99289172989661],[37.78950305916851,47.99285941996891],[37.78928311802929,47.99276249006445],[37.78917046525066,47.99268710001285],[37.78906317689007,47.992572219722476],[37.78903099038189,47.99241066888141],[37.78906317689007,47.992285017877585],[37.78918655850475,47.99219526697323],[37.789851746340446,47.99206961544494],[37.79018434025829,47.991854212113175],[37.79080661274975,47.99166034834581]];
+    //console.log(arr);
+    arr = arr.substring(9,arr.length-9);
+    arr = arr.substring(0,arr.length-2);
+    arr = arr.split(',');
+    console.log(arr[0]);
+    
+    
+
+    //console.log(arr);
+    
+
+    for(i=0;i<arr.length;i++){
+        arr[i] = reverse(arr[i].split(' '));
+    }
+    if(style == '1')
+    myMap.geoObjects
+        .add(new ymaps.Placemark(
+            mark
+            , {
+            balloonContent: mes,
+            hintContent: mes,
+            balloonContent: mes
+        }, {
+            //preset: 'islands#icon',
+            //iconColor: '#0095b6'
+            // Опции.
+            // Необходимо указать данный тип макета.
+            iconLayout: 'default#image',
+            // Своё изображение иконки метки.
+            iconImageHref: 'ico.png',
+            // Размеры метки.
+            iconImageSize: [40, 40],
+        }));
+
+        arr = arr.splice(0,arr.length-1);//убираем артефакты
+
+    // Создаем многоугольник, используя вспомогательный класс Polygon.
+    var myPolygon = new ymaps.Polygon([
+        // Указываем координаты вершин многоугольника.
+        // Координаты вершин внешнего контура.
+        arr
+        //[
+            //[47.5, 37.3], [48.5, 38.2] //switch coords()
+         // 
+        //],
+        // // Координаты вершин внутреннего контура.
+        // [
+        //     [55.75, 37.52],
+        //     [55.75, 37.68],
+        //     [55.65, 37.60]
+        // ]
+    ], {
+        // Описываем свойства геообъекта.
+        // Содержимое балуна.
+        hintContent: "Многоугольник"
+    }, {
+        // Задаем опции геообъекта.
+        // Цвет заливки.
+        fillColor: style=='1'?'#00FF0088':"#ffff00",
+        strokeColor: style=='1'?'#00FF0088':"#ffff00",
+        // Ширина обводки.
+        strokeWidth: 1,
+        opacity: 0.5,
+    });
+    //console.dir(myPolygon);
+    // Добавляем многоугольник на карту.
+    
+    myMap.geoObjects.add(myPolygon);
+    
+    
+}
+function exec(){
+    var r = wifi.mess.length;
+    for(var i=0;i<r;i++)
+    poly(
+        wifi.mess[i].zone,
+        wifi.mess[i].name,
+        wifi.mess[i].style,
+        [wifi.mess[i][3],wifi.mess[i][2]]
+    );
+    // for(var i=0;i<r/2-1;i++)
+    // poly(wifi.mess[i].zone,wifi.mess[i].name);
+    // for(var i=r/2-1;i<r;i++)
+    // poly(wifi.mess[i].zone);
+}
+
+function test(){
+    myMap.geoObjects
+        .add(new ymaps.Placemark([55.684758, 37.738521], {
+            balloonContent: 'цвет <strong>воды пляжа бонди</strong>'
+        }, {
+            preset: 'islands#icon',
+            iconColor: '#0095b6'
+        }));
+}
