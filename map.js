@@ -40,15 +40,21 @@ function draw(event) {
      ){//if newLocation
 console.log('DrawPath ');
         searchIndex=-1;
-
+        try{
         //searchControl.showResult(0);//balloon?
 
         //myCollection.getClosestTo(myMap.getCenter()).balloon.open();
-        var point = myCollection.getClosestTo(myMap.getCenter());
-        track.call(myMap,myMap.getCenter(),point);
-        // myMap.getCenter().balloon.open();
-        point.balloon.open();
-        console.log(Date());
+        var p = myMap.getCenter();
+        var point = myCollection.getClosestTo(p);
+        
+            
+            track.call(myMap,p,point);
+            // myMap.getCenter().balloon.open();
+            point.balloon.open();
+            console.log(Date());
+        }catch(excp){
+
+        }
   }
 }
 
